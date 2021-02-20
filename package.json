@@ -1,0 +1,25 @@
+{
+  "name": "nkr-api",
+  "version": "1.0.0",
+  "description": "Naturalna Kolej Rzeczy API",
+  "main": "src/app.js",
+  "scripts": {
+    "dev": "ts-node src/app.ts"
+  },
+  "keywords": [
+    "nkr"
+  ],
+  "author": "Jakub Rekowski (jakub.rekowski@gmail.com)",
+  "license": "ISC",
+  "devDependencies": {
+    "nodemon": "^2.0.7"
+  },
+  "dependencies": {
+    "@google-cloud/firestore": "^4.9.4",
+    "apollo-server": "^2.21.0",
+    "dotenv": "^8.2.0",
+    "fireorm": "^0.19.0",
+    "graphql": "^15.5.0",
+    "reflect-metadata": "^0.1.13"
+  }
+}

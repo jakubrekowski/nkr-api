@@ -1,0 +1,128 @@
+# Query
+type Query {
+  owners: [Owner!]
+  owner(id: ID!): Owner
+  units: [Unit!]
+  unit(id: ID!): Unit
+  manufacturers: [Manufacturer!]
+  manufacturer(id: ID!): Manufacturer
+  models: [Model!]
+  model(id: ID!): Model
+  imageTags: [ImageTag!]
+  imageTag(id: ID!): ImageTag
+  documentations: [Documentation!]
+  documentation(id: ID!): Documentation
+} 
+
+type Mutation {
+  createOwner(
+    name: String!
+  ): Owner!
+  deleteOwner(id: ID!): Owner!
+  createUnit(
+    name: String!
+    number: String!
+    model: ID!
+    owner: ID!
+    manufacturer: ID!
+    state: String!
+    countryOfOperation: String!): Unit!
+  deleteUnit(id: ID!): Unit!
+  createManufacturer(
+    name: String!
+    shortName: String!
+    country: String!
+    creationDate: String!
+    works: Boolean!
+    dateOfLiquidation: String!
+  ): Manufacturer!
+  deleteManufacturer(id: ID!): Manufacturer!
+  createModel(
+    modelName: String!
+    factoryType: String!
+    manufacturer: ID!
+    manufacturerModel: String!
+    intendentUse: String!
+    type: String!
+    specTable: String!
+    series: String!
+  ): Model!
+  deleteModel(id: ID!): Model!
+  createImageTag(
+    name: String!
+  ): ImageTag!
+  deleteImageTag(id: ID!): ImageTag!
+  createDocumentation(
+    title: String!
+    author: String!
+    issueNumber: String!
+    publisher: String!
+    releaseDate: String!
+    type: String!
+    url: String!
+    model: ID!
+  ): Documentation!
+  deleteDocumentation(id: ID!): Documentation!
+}
+
+# Types
+type Manufacturer {
+  id: ID!
+  name: String!
+  shortName: String!
+  country: String!
+  creationDate: String!
+  works: Boolean!
+  dateOfLiquidation: String
+  units: [Unit!]
+}
+
+type Model {
+  id: ID!
+  modelName: String!
+  factoryType: String!
+  manufacturer: Manufacturer!
+  units: [Unit!]
+  manufacturerModel: String!
+  intendentUse: String!
+  type: String!
+  specTable: String!
+  series: String!
+  documentation: [Documentation!]
+}
+
+type Owner {
+  id: ID!
+  name: String!
+  units: [Unit!]
+}
+
+type Unit {
+  id: ID!
+  name: String!
+  number: String!
+  model: Model!
+  owner: Owner!
+  manufacturer: Manufacturer!
+  state: String!
+  assignments: String
+  repairHistory: String
+  countryOfOperation: String!
+}
+
+type ImageTag {
+  id: ID!
+  name: String!
+}
+
+type Documentation {
+  id: ID!
+  title: String!
+  author: String!
+  issueNumber: String!
+  publisher: String!
+  releaseDate: String!
+  type: String!
+  url: String!
+  model: Model! 
+}

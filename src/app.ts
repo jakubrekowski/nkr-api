@@ -2,7 +2,7 @@ const { ApolloServer, gql } = require('apollo-server');
 const { readFileSync } = require('fs');
 const { Firestore } = require('@google-cloud/firestore');
 const fireorm = require('fireorm');
-const { Collection } = require('fireorm')
+const { Collection, getRepository } = require('fireorm');
 
 const firebaseConfig = {
   projectId: 'naturalnakolejrzeczy',
@@ -10,7 +10,7 @@ const firebaseConfig = {
 }
 
 const firestore = new Firestore(firebaseConfig);
-fireorm.initialize(firestore)
+fireorm.initialize(firestore);
 
 @Collection()
 class Manufacturer {
@@ -21,15 +21,92 @@ class Manufacturer {
   creationDate: string;
   works: Boolean;
   dateOfLiquidation: string;
-  units: string;
+  // units: [string]; // without it
 }
 
+const manufacturerRepository = getRepository(Manufacturer);
 
+@Collection()
+class Model {
+  id: string;
+  factoryType: string;
+  manufacturer: string;
+  // units: [string]; // without it
+  manufacturerModel: string;
+  intendentUse: string;
+  type: string;
+  specTable: string;
+  series: string;
+  // documentation: [string];
+}
+
+const modelRepository = getRepository(Model);
+
+@Collection()
+class Owner {
+  id: string;
+  name: string;
+  // units: [string]; // without it
+}
+
+const ownerRepository = getRepository(Owner);
+
+@Collection()
+class Unit {
+  id: string;
+  name: string;
+  number: string;
+  model: string;
+  owner: string;
+  manufacturer: string;
+  state: string;
+  assignments: string;
+  repairHistory: string;
+  countryOfOperation: string;
+}
+
+const unitRepository = getRepository(Unit);
+
+@Collection() 
+class ImageTag {
+  id: string;
+  name: string;
+}
+
+const imageTagRepository = getRepository(ImageTag);
+
+@Collection()
+class ImageObj {
+  id: string;
+  units: [string];
+  models: [string];
+  description: string;
+  author: string;
+  date: string;
+  tags: [string];
+}
+
+const imageObjRepository = getRepository(Manufacturer);
+
+@Collection()
+class Documentation {
+  id: string;
+  title: string;
+  author: string;
+  issueNumber: string;
+  publisher: string;
+  releaseDate: string;
+  type: string;
+  url: string;
+  model: string;
+}
+
+const documentationRepository = getRepository(Documentation);
 
 const resolvers = {
   Query: {
     owners: async () => {
-      const snapshot = await firestore.collection('owners').get();
+      const snapshot = await firestore.collection('Owners').get();
       const response = [];
       await snapshot.forEach(doc => {
         const data = doc.data()
@@ -40,7 +117,7 @@ const resolvers = {
       return response;
     },
     units: async () => {
-      const snapshot = await firestore.collection('units').get();
+      const snapshot = await firestore.collection('Units').get();
       const response = [];
       await snapshot.forEach(doc => {
         const data = doc.data()
@@ -51,7 +128,7 @@ const resolvers = {
       return response;
     },
     manufacturers: async () => {
-      const snapshot = await firestore.collection('manufacturers').get();
+      const snapshot = await firestore.collection('Manufacturers').get();
       const response = [];
       await snapshot.forEach(doc => {
         const data = doc.data()
@@ -62,7 +139,7 @@ const resolvers = {
       return response;
     },
     models: async () => {
-      const snapshot = await firestore.collection('models').get();
+      const snapshot = await firestore.collection('Models').get();
       const response = [];
       await snapshot.forEach(doc => {
         const data = doc.data()
@@ -72,137 +149,161 @@ const resolvers = {
 
       return response;
     },
-    imageTags: async () => await prisma.imageTags(),
-    documentations: async () => await prisma.dicumentations(),
-    // images: async () => await prisma.images(),
+    imageTags: async () => {
+      const snapshot = await firestore.collection('ImageTags').get();
+      const response = [];
+      await snapshot.forEach(doc => {
+        const data = doc.data()
+        data.id = doc.id
+        response.push(data);
+      })
+
+      return response;
+    },
+    // images: async () => {
+    //   const snapshot = await firestore.collection('image').get();
+    //   const response = [];
+    //   await snapshot.forEach(doc => {
+    //     const data = doc.data()
+    //     data.id = doc.id
+    //     response.push(data);
+    //   })
+
+    //   return response;
+    // },
+    documentations: async () => {
+      const snapshot = await firestore.collection('Documentations').get();
+      const response = [];
+      await snapshot.forEach(doc => {
+        const data = doc.data()
+        data.id = doc.id
+        response.push(data);
+      })
+
+      return response;
+    },
     owner: async (parent, args, context, info) => {
-      return prisma.owner({ id: args.id });
+      return await ownerRepository.findById(args.id)
     },
     unit: async (parent, args, context, info) => {
-      return prisma.unit({ id: args.id });
+      return await unitRepository.findById(args.id)
     },
     manufacturer: async (parent, args, context, info) => {
-      return prisma.manufacturer({ id: args.id });
+      return await manufacturerRepository.findById(args.id)
     },
     model: async (parent, args, context, info) => {
-      return prisma.model({ id: args.id });
+      return await modelRepository.findById(args.id)
     },
     imageTag: async (parent, args, context, info) => {
-      return prisma.imageTag({ id: args.id });
+      return await imageTagRepository.findById(args.id)
     },
+    // image: async (parent, args, context, info) => {
+    //   return await imageObjRepository.findById(args.id)
+    // },
     documentation: async (parent, args, context, info) => {
-      return prisma.documentation({ id: args.id });
+      return await documentationRepository.findById(args.id)
     },
   },
   Mutation: {
     createOwner: async(parent, args) => {
-      const owner = { name: args.name };
-      return prisma.createOwner(owner);
+      const owner = new Owner();
+      owner.name = args.name;
+
+      const ownerDoc = await ownerRepository.create(owner);
+      return await ownerRepository.findById(ownerDoc.id);
     },
     createUnit: async(parent, args) => {
-      const unit = { 
-        name: args.name,
-        number: args.number,
-        model: { connect: { id: args.model } },
-        owner: { connect: { id: args.owner } },
-        manufacturer: { connect: { id: args.manufacturer } },
-        state: args.state,
-        assignments: args.assignments,
-        repairHistory: args.repairHistory,
-        countryOfOperation: args.countryOfOperation
-      };
-      return prisma.createUnit(unit);
+      const unit = new Unit();
+      unit.name = args.name;
+      unit.number = args.number;
+      unit.model = args.model;
+      unit.owner = args.owner;
+      unit.manufacturer = args.manufacturer;
+      unit.state = args.state;
+      unit.assignments = args.assignments;
+      unit.repairHistory = args.repairHistory;
+      unit.countryOfOperation = args.countryOfOperation;
+
+      const unitDoc = await unitRepository.create(unit);
+      return await unitRepository.findById(unitDoc.id);
     },
     createManufacturer: async(parent, args) => {
-      const manufacturer = { 
-        name: args.name,
-        shortName: args.shortName,
-        country: args.country,
-        creationDate: args.creationDate,
-        works: args.works,
-        dateOfLiquidation: args.dateOfLiquidation
-      };
-      return prisma.createManufacturer(manufacturer);
+      const manufacturer = new Manufacturer();
+      manufacturer.name = args.name;
+      manufacturer.shortName = args.shortName;
+      manufacturer.country = args.country;
+      manufacturer.creationDate = args.creationDate;
+      manufacturer.works = args.works;
+      manufacturer.dateOfLiquidation = args.dateOfLiquidation;
+
+      const manufacturerDoc = await manufacturerRepository.create(manufacturer);
+      return await manufacturerRepository.findById(manufacturerDoc.id);
     },
     createModel: async(parent, args) => {
-      const model = {
-        factoryType: args.factoryType,
-        manufacturer: { connect: { id: args.manufacturer } },
-        manufacturerModel: args.manufacturerModel,
-        modelName: args.modelName,
-        intendentUse: args.intendentUse,
-        type: args.type,
-        specTable: args.specTable,
-        series: args.series,
-      };
-      return prisma.createModel(model);
+      const model = new Model();
+      model.factoryType = args.factoryType;
+      model.manufacturer = args.manufacturer;
+      model.manufacturerModel = args.manufacturerModel;
+      model.intendentUse = args.intendentUse;
+      model.type = args.type;
+      model.specTable = args.specTable;
+      model.series = args.series;
+
+      const modelDoc = await modelRepository.create(model);
+      return await modelRepository.findById(modelDoc.id);
     },
     createImageTag: async(parent, args) => {
-      const imageTag = {
-        name: args.name,
-      };
-      return prisma.createImageTag(imageTag);
+      const imageTag = new ImageTag();
+      imageTag.name = args.name;
+
+      const imageTagDoc = await imageTagRepository.create(imageTag);
+      return await imageTagRepository.findById(imageTagDoc.id);
     },
     createDocumentation: async(parent, args) => {
-      console.log(args)
-      const documentation = {
-        title: args.title,
-        author: args.author,
-        issueNumber: args.issueNumber,
-        publisher: args.publisher,
-        releaseDate: args.releaseDate,
-        type: args.type,
-        url: args.url,
-        model: args.model,
-      };
-      return prisma.createDocumentation(documentation);
+      const documentation = new Documentation();
+      documentation.title = args.title;
+      documentation.author = args.author;
+      documentation.issueNumber = args.issueNumber;
+      documentation.publisher = args.publisher;
+      documentation.releaseDate = args.releaseDate;
+      documentation.type = args.type;
+      documentation.url = args.url;
+      documentation.model = args.model;
+      
+      const documentationDoc = await documentationRepository.create(documentation);
+      return await documentationRepository.findById(documentationDoc.id);
     },
   },
   Owner: {
     units: async (parent, args, context, info) => {
-      const doc = await firestore.collection('owners').doc(parent.id).get();
-      const owner = await doc.data();
-
-      const units = [];
-
-      console.log(typeof owner.units)
-
-      await Promise.all(owner.units.forEach(async (id) => {
-        await firestore.collection('unit').doc(id).get().then(async (doc) => {
-          const res = await doc.data();
-          res.id = id;
-          units.push(res);
-        })
-      }))
-
-      return units;
+      return await unitRepository.whereEqualTo('owner', parent.id).find();
     },
   },
   Unit: {
-    model: (parent, args, context, info) => {
-      return prisma.unit({ id: parent.id }).model()
+    model: async (parent, args, context, info) => {
+      return await modelRepository.findById(parent.model);
     },
-    owner: (parent, args, context, info) => {
-      return prisma.unit({ id: parent.id }).owner()
+    owner: async (parent, args, context, info) => {
+      return await ownerRepository.findById(parent.owner);
     },
-    manufacturer: (parent, args, context, info) => {
-      return prisma.unit({ id: parent.id }).manufacturer()
+    manufacturer: async (parent, args, context, info) => {
+      return await manufacturerRepository.findById(parent.manufacturer);
     },
   },
   Manufacturer: {
     units: async (parent, args, context, info) => {
-      return prisma.manufacturer({ id: parent.id }).units()
+      return await unitRepository.whereEqualTo('manufacturer', parent.id).find();
     }
   },
   Model: {
-    manufacturer: (parent, args, context, info) => {
-      return prisma.model({ id: parent.id }).manufacturer()
+    manufacturer: async (parent, args, context, info) => {
+      return await manufacturerRepository.findById(parent.manufacturer);
     },
     units: async (parent, args, context, info) => {
-      return prisma.model({ id: parent.id }).units()
+      return await unitRepository.whereEqualTo('model', parent.id).find();
     },
     documentation: async (parent, args, context, info) => {
-      return prisma.model({ id: parent.id }).documentation()
+      return await documentationRepository.whereEqualTo('model', parent.id).find();
     },
   },
   // ImageTag: {
@@ -212,7 +313,7 @@ const resolvers = {
   // },
   Documentation: {
     model: async (parent, args, context, info) => {
-      return prisma.documentation({ id: parent.id }).model()
+      return await modelRepository.findById(parent.id);
     },
   },
 }

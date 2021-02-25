@@ -26,6 +26,8 @@ type Mutation {
     owner: ID!
     manufacturer: ID!
     state: String!
+    assignments: String!
+    repairHistory: String!
     countryOfOperation: String!): Unit!
   deleteUnit(id: ID!): Unit!
   createManufacturer(
@@ -38,7 +40,6 @@ type Mutation {
   ): Manufacturer!
   deleteManufacturer(id: ID!): Manufacturer!
   createModel(
-    modelName: String!
     factoryType: String!
     manufacturer: ID!
     manufacturerModel: String!
@@ -75,11 +76,11 @@ type Manufacturer {
   works: Boolean!
   dateOfLiquidation: String
   units: [Unit!]
+  models: [Model!]
 }
 
 type Model {
   id: ID!
-  modelName: String!
   factoryType: String!
   manufacturer: Manufacturer!
   units: [Unit!]

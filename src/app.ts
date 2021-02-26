@@ -1,8 +1,7 @@
-const { ApolloServer, gql } = require('apollo-server');
-const { readFileSync } = require('fs');
-const { Firestore } = require('@google-cloud/firestore');
-const fireorm = require('fireorm');
-const { Collection, getRepository } = require('fireorm');
+import { addResolveFunctionsToSchema, ApolloServer, gql } from 'apollo-server';
+import { readFileSync, writeFile } from 'fs';
+import { Firestore } from '@google-cloud/firestore';
+import { initialize, Collection, getRepository } from 'fireorm';
 
 const firebaseConfig = {
   projectId: 'naturalnakolejrzeczy',
@@ -10,7 +9,7 @@ const firebaseConfig = {
 }
 
 const firestore = new Firestore(firebaseConfig);
-fireorm.initialize(firestore);
+initialize(firestore);
 
 @Collection()
 class Manufacturer {
@@ -21,7 +20,6 @@ class Manufacturer {
   creationDate: string;
   works: Boolean;
   dateOfLiquidation: string;
-  // units: [string]; // without it
 }
 
 const manufacturerRepository = getRepository(Manufacturer);
@@ -63,6 +61,7 @@ class Unit {
   assignments: string;
   repairHistory: string;
   countryOfOperation: string;
+  heroImage: string;
 }
 
 const unitRepository = getRepository(Unit);
@@ -86,7 +85,7 @@ class ImageObj {
   tags: [string];
 }
 
-const imageObjRepository = getRepository(Manufacturer);
+const imageObjRepository = getRepository(ImageObj);
 
 @Collection()
 class Documentation {
@@ -160,17 +159,17 @@ const resolvers = {
 
       return response;
     },
-    // images: async () => {
-    //   const snapshot = await firestore.collection('image').get();
-    //   const response = [];
-    //   await snapshot.forEach(doc => {
-    //     const data = doc.data()
-    //     data.id = doc.id
-    //     response.push(data);
-    //   })
+    images: async () => {
+      const snapshot = await firestore.collection('ImageObjs').get();
+      const response = [];
+      await snapshot.forEach(doc => {
+        const data = doc.data()
+        data.id = doc.id
+        response.push(data);
+      })
 
-    //   return response;
-    // },
+      return response;
+    },
     documentations: async () => {
       const snapshot = await firestore.collection('Documentations').get();
       const response = [];
@@ -197,9 +196,9 @@ const resolvers = {
     imageTag: async (parent, args, context, info) => {
       return await imageTagRepository.findById(args.id)
     },
-    // image: async (parent, args, context, info) => {
-    //   return await imageObjRepository.findById(args.id)
-    // },
+    image: async (parent, args, context, info) => {
+      return await imageObjRepository.findById(args.id)
+    },
     documentation: async (parent, args, context, info) => {
       return await documentationRepository.findById(args.id)
     },
@@ -223,6 +222,7 @@ const resolvers = {
       unit.assignments = args.assignments;
       unit.repairHistory = args.repairHistory;
       unit.countryOfOperation = args.countryOfOperation;
+      unit.heroImage = args.heroImage;
 
       const unitDoc = await unitRepository.create(unit);
       return await unitRepository.findById(unitDoc.id);
@@ -259,6 +259,34 @@ const resolvers = {
       const imageTagDoc = await imageTagRepository.create(imageTag);
       return await imageTagRepository.findById(imageTagDoc.id);
     },
+    createImage: async(parent, args) => {
+      const image = new ImageObj();
+      image.units = args.units;
+      image.models = args.models;
+      image.description = args.description;
+      image.author = args.author;
+      image.date = args.date;
+      image.tags = args.tags;
+
+      if (args.image === undefined) {
+        throw('File not attached!')
+      } else {
+        const imageDoc = await imageObjRepository.create(image);
+
+        // save image
+
+        // const rowImage = args.image.replace(/^data:([A-Za-z-+\/]+);base64,(.+)$/, '');
+
+        // console.log(rowImage)
+
+        // writeFile(`./temp/${imageDoc.id}.png`, rowImage, 'base64', (err) => {
+        //   imageObjRepository.delete(imageDoc.id);
+        //   console.error(err);
+        // })
+  
+        return await imageObjRepository.findById(imageDoc.id);
+      }     
+    },
     createDocumentation: async(parent, args) => {
       const documentation = new Documentation();
       documentation.title = args.title;
@@ -289,6 +317,9 @@ const resolvers = {
     manufacturer: async (parent, args, context, info) => {
       return await manufacturerRepository.findById(parent.manufacturer);
     },
+    images: async (parent, args, context, info) => {
+      return await imageObjRepository.whereArrayContains('units', parent.id)
+    }
   },
   Manufacturer: {
     units: async (parent, args, context, info) => {
@@ -305,12 +336,44 @@ const resolvers = {
     documentation: async (parent, args, context, info) => {
       return await documentationRepository.whereEqualTo('model', parent.id).find();
     },
+    images: async (parent, args, context, info) => {
+      return await imageObjRepository.whereArrayContains('models', parent.id)
+    }
   },
-  // ImageTag: {
-  //   images: (parent, args, context, info) => {
-  //     return prisma.ImageTag({ id: parent.id }).images()
-  //   }
-  // },
+  ImageTag: {
+    images: async (parent, args, context, info) => {
+      return await imageObjRepository.whereArrayContains('tags', parent.id)
+    }
+  },
+  Image: {
+    units: async (parent, args, context, info) => {
+      const unitsIds = parent.units;
+      let units = []
+      for (const id of unitsIds) {
+        units.push(await unitRepository.findById(id))
+      }
+      return units
+    },
+    models: async (parent, args, context, info) => {
+      const modelsIds = parent.models;
+      let models = []
+      for (const id of modelsIds) {
+        models.push(await modelRepository.findById(id))
+      }
+      return models
+    },
+    tags: async (parent, args, context, info) => {
+      const tagsIds = parent.tags;
+      let tags = []
+      for (const id of tagsIds) {
+        const tempDoc = await imageTagRepository.findById(id)
+        if (tempDoc !== null) {
+          tags.push(tempDoc)
+        }
+      }
+      return tags
+    }
+  },
   Documentation: {
     model: async (parent, args, context, info) => {
       return await modelRepository.findById(parent.id);

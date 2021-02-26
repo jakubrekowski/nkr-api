@@ -10,6 +10,8 @@ type Query {
   model(id: ID!): Model
   imageTags: [ImageTag!]
   imageTag(id: ID!): ImageTag
+  images: [Image!]
+  image(id: ID!): Image
   documentations: [Documentation!]
   documentation(id: ID!): Documentation
 } 
@@ -53,6 +55,15 @@ type Mutation {
     name: String!
   ): ImageTag!
   deleteImageTag(id: ID!): ImageTag!
+  createImage(
+    units: [ID!]
+    models: [ID!]
+    description: String!
+    author: String!
+    date: String!
+    tags: [ID!]
+    image: String!
+  ): Image!
   createDocumentation(
     title: String!
     author: String!
@@ -90,6 +101,7 @@ type Model {
   specTable: String!
   series: String!
   documentation: [Documentation!]
+  images: [Image!]
 }
 
 type Owner {
@@ -109,11 +121,24 @@ type Unit {
   assignments: String
   repairHistory: String
   countryOfOperation: String!
+  heroImage: Image!
+  images: [Image!]
 }
 
 type ImageTag {
   id: ID!
   name: String!
+  images: [Image!]
+}
+
+type Image {
+  id: ID!,
+  units: [Unit!]
+  models: [Model!]
+  author: String!
+  date: String!
+  description: String!
+  tags: [ImageTag!]
 }
 
 type Documentation {

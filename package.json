@@ -16,6 +16,7 @@
   },
   "dependencies": {
     "@google-cloud/firestore": "^4.9.4",
+    "@types/node": "^14.14.31",
     "apollo-server": "^2.21.0",
     "dotenv": "^8.2.0",
     "fireorm": "^0.19.0",

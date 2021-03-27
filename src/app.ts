@@ -1,7 +1,13 @@
-import { addResolveFunctionsToSchema, ApolloServer, gql } from 'apollo-server';
+import { ApolloServer, gql } from 'apollo-server';
 import { readFileSync, writeFile } from 'fs';
 import { Firestore } from '@google-cloud/firestore';
 import { initialize, Collection, getRepository } from 'fireorm';
+import { sign as jwtSign, verify as jwtVerify } from 'jsonwebtoken';
+import { config as dotenvConfig } from 'dotenv';
+import axios from 'axios';
+import { decode } from 'querystring';
+
+dotenvConfig();
 
 const firebaseConfig = {
   projectId: 'naturalnakolejrzeczy',
@@ -20,6 +26,8 @@ class Manufacturer {
   creationDate: string;
   works: Boolean;
   dateOfLiquidation: string;
+  moderator: string;
+  updateDate: number;
 }
 
 const manufacturerRepository = getRepository(Manufacturer);
@@ -29,13 +37,15 @@ class Model {
   id: string;
   factoryType: string;
   manufacturer: string;
-  // units: [string]; // without it
   manufacturerModel: string;
   intendentUse: string;
   type: string;
+  tractionType: string;
   specTable: string;
   series: string;
-  // documentation: [string];
+  heroImage: string;
+  moderator: string;
+  updateDate: number;
 }
 
 const modelRepository = getRepository(Model);
@@ -44,7 +54,11 @@ const modelRepository = getRepository(Model);
 class Owner {
   id: string;
   name: string;
-  // units: [string]; // without it
+  isAssociation: boolean;
+  adress: string;
+  geopoint: string;
+  moderator: string;
+  updateDate: number;
 }
 
 const ownerRepository = getRepository(Owner);
@@ -62,6 +76,8 @@ class Unit {
   repairHistory: string;
   countryOfOperation: string;
   heroImage: string;
+  moderator: string;
+  updateDate: number;
 }
 
 const unitRepository = getRepository(Unit);
@@ -70,6 +86,8 @@ const unitRepository = getRepository(Unit);
 class ImageTag {
   id: string;
   name: string;
+  moderator: string;
+  updateDate: number;
 }
 
 const imageTagRepository = getRepository(ImageTag);
@@ -83,6 +101,8 @@ class ImageObj {
   author: string;
   date: string;
   tags: [string];
+  moderator: string;
+  updateDate: number;
 }
 
 const imageObjRepository = getRepository(ImageObj);
@@ -98,6 +118,8 @@ class Documentation {
   type: string;
   url: string;
   model: string;
+  moderator: string;
+  updateDate: number;
 }
 
 const documentationRepository = getRepository(Documentation);
@@ -181,6 +203,9 @@ const resolvers = {
 
       return response;
     },
+    associations: async () => {
+      return await ownerRepository.whereEqualTo('isAssociation', true).find();
+    },
     owner: async (parent, args, context, info) => {
       return await ownerRepository.findById(args.id)
     },
@@ -202,104 +227,238 @@ const resolvers = {
     documentation: async (parent, args, context, info) => {
       return await documentationRepository.findById(args.id)
     },
+    tokenValid: async (parent, args, context, info) => {
+      return await jwtVerify(args.token, process.env.tokenSecret, async (err, decoded) => {
+        if (err) {
+          throw('invalid token')
+        }
+
+        if (decoded.exp < Date.now()) {
+          throw('expired token')
+        }
+
+        return {
+          valid: true
+        }
+      })
+    },
   },
   Mutation: {
     createOwner: async(parent, args) => {
-      const owner = new Owner();
-      owner.name = args.name;
+      return await jwtVerify(args.token, process.env.tokenSecret, async (err, decoded) => {
+        if (err) {
+          throw('invalid token')
+        }
 
-      const ownerDoc = await ownerRepository.create(owner);
-      return await ownerRepository.findById(ownerDoc.id);
+        if (decoded.exp < Date.now()) {
+          throw('expired token')
+        }
+
+        const owner = new Owner();
+        owner.name = args.name;
+        owner.isAssociation = args.isAssociation;
+
+        owner.adress = args.adress;
+        owner.geopoint = args.geopoint;
+        owner.moderator = decoded.id;
+        owner.updateDate = Date.now();
+  
+        const ownerDoc = await ownerRepository.create(owner);
+        return await ownerRepository.findById(ownerDoc.id);
+      })
     },
     createUnit: async(parent, args) => {
-      const unit = new Unit();
-      unit.name = args.name;
-      unit.number = args.number;
-      unit.model = args.model;
-      unit.owner = args.owner;
-      unit.manufacturer = args.manufacturer;
-      unit.state = args.state;
-      unit.assignments = args.assignments;
-      unit.repairHistory = args.repairHistory;
-      unit.countryOfOperation = args.countryOfOperation;
-      unit.heroImage = args.heroImage;
-
-      const unitDoc = await unitRepository.create(unit);
-      return await unitRepository.findById(unitDoc.id);
+      return await jwtVerify(args.token, process.env.tokenSecret, async (err, decoded) => {
+        if (err) {
+          throw('invalid token')
+        }
+      
+        if (decoded.exp < Date.now()) {
+          throw('expired token')
+        }
+      
+        const unit = new Unit();
+        unit.name = args.name;
+        unit.number = args.number;
+        unit.model = args.model;
+        unit.owner = args.owner;
+        unit.manufacturer = args.manufacturer;
+        unit.state = args.state;
+        unit.assignments = args.assignments;
+        unit.repairHistory = args.repairHistory;
+        unit.countryOfOperation = args.countryOfOperation;
+        unit.heroImage = args.heroImage;
+        unit.moderator = decoded.id;
+        unit.updateDate = Date.now();
+  
+        const unitDoc = await unitRepository.create(unit);
+        return await unitRepository.findById(unitDoc.id);
+      })     
     },
     createManufacturer: async(parent, args) => {
-      const manufacturer = new Manufacturer();
-      manufacturer.name = args.name;
-      manufacturer.shortName = args.shortName;
-      manufacturer.country = args.country;
-      manufacturer.creationDate = args.creationDate;
-      manufacturer.works = args.works;
-      manufacturer.dateOfLiquidation = args.dateOfLiquidation;
-
-      const manufacturerDoc = await manufacturerRepository.create(manufacturer);
-      return await manufacturerRepository.findById(manufacturerDoc.id);
+      return await jwtVerify(args.token, process.env.tokenSecret, async (err, decoded) => {
+        if (err) {
+          throw('invalid token')
+        }
+      
+        if (decoded.exp < Date.now()) {
+          throw('expired token')
+        }
+      
+        const manufacturer = new Manufacturer();
+        manufacturer.name = args.name;
+        manufacturer.shortName = args.shortName;
+        manufacturer.country = args.country;
+        manufacturer.creationDate = args.creationDate;
+        manufacturer.works = args.works;
+        manufacturer.dateOfLiquidation = args.dateOfLiquidation;
+        manufacturer.moderator = decoded.id;
+        manufacturer.updateDate = Date.now();
+  
+        const manufacturerDoc = await manufacturerRepository.create(manufacturer);
+        return await manufacturerRepository.findById(manufacturerDoc.id);
+      })     
     },
     createModel: async(parent, args) => {
-      const model = new Model();
-      model.factoryType = args.factoryType;
-      model.manufacturer = args.manufacturer;
-      model.manufacturerModel = args.manufacturerModel;
-      model.intendentUse = args.intendentUse;
-      model.type = args.type;
-      model.specTable = args.specTable;
-      model.series = args.series;
+      return await jwtVerify(args.token, process.env.tokenSecret, async (err, decoded) => {
+        if (err) {
+          throw('invalid token')
+        }
+      
+        if (decoded.exp < Date.now()) {
+          throw('expired token')
+        }
+      
+        const model = new Model();
+        model.factoryType = args.factoryType;
+        model.manufacturer = args.manufacturer;
+        model.manufacturerModel = args.manufacturerModel;
+        model.intendentUse = args.intendentUse;
+        model.type = args.type;
+        model.tractionType = args.tractionType;
+        model.specTable = args.specTable;
+        model.series = args.series;
+        model.heroImage = args.heroImage;
+        model.moderator = decoded.id;
+        model.updateDate = Date.now();
 
-      const modelDoc = await modelRepository.create(model);
-      return await modelRepository.findById(modelDoc.id);
+        const modelDoc = await modelRepository.create(model);
+        return await modelRepository.findById(modelDoc.id);
+      })
+      
     },
     createImageTag: async(parent, args) => {
-      const imageTag = new ImageTag();
-      imageTag.name = args.name;
+      return await jwtVerify(args.token, process.env.tokenSecret, async (err, decoded) => {
+        if (err) {
+          throw('invalid token')
+        }
+      
+        if (decoded.exp < Date.now()) {
+          throw('expired token')
+        }
+      
+        const imageTag = new ImageTag();
+        imageTag.name = args.name;
+        imageTag.moderator = decoded.id;
+        imageTag.updateDate = Date.now();
 
-      const imageTagDoc = await imageTagRepository.create(imageTag);
-      return await imageTagRepository.findById(imageTagDoc.id);
+        const imageTagDoc = await imageTagRepository.create(imageTag);
+        return await imageTagRepository.findById(imageTagDoc.id);
+      })
+      
     },
     createImage: async(parent, args) => {
-      const image = new ImageObj();
-      image.units = args.units;
-      image.models = args.models;
-      image.description = args.description;
-      image.author = args.author;
-      image.date = args.date;
-      image.tags = args.tags;
+      return await jwtVerify(args.token, process.env.tokenSecret, async (err, decoded) => {
+        if (err) {
+          throw('invalid token')
+        }
+      
+        if (decoded.exp < Date.now()) {
+          throw('expired token')
+        }
+      
+        const image = new ImageObj();
+        image.units = args.units;
+        image.models = args.models;
+        image.description = args.description;
+        image.author = args.author;
+        image.date = args.date;
+        image.tags = args.tags;
+        image.moderator = decoded.id;
+        image.updateDate = Date.now();
 
-      if (args.image === undefined) {
-        throw('File not attached!')
-      } else {
-        const imageDoc = await imageObjRepository.create(image);
+        if (args.image === undefined) {
+          return {
+            id: 'err',
+            description: 'image not attached',
+            author: 'server',
+            date: new Date(),
+          }
+        } else {
+          const imageDoc = await imageObjRepository.create(image);
 
-        // save image
+          const urlImage = args.image;
 
-        // const rowImage = args.image.replace(/^data:([A-Za-z-+\/]+);base64,(.+)$/, '');
+          let extension = '';
 
-        // console.log(rowImage)
+          if (urlImage.search(':image/jpeg') !== -1) {
+            extension = 'jpeg';
+          } else if (urlImage.search(':image/png') !== -1) {
+            extension = 'png';
+          }
 
-        // writeFile(`./temp/${imageDoc.id}.png`, rowImage, 'base64', (err) => {
-        //   imageObjRepository.delete(imageDoc.id);
-        //   console.error(err);
-        // })
-  
-        return await imageObjRepository.findById(imageDoc.id);
-      }     
+          const rowImage = urlImage.replace('data:image/png;base64,', '').replace('data:image/jpeg;base64,', '');
+          
+          // axios.post(`http://localhost:8000/img/${imageDoc.id}`, {
+          //   base64: args.image,
+          //   token: "",
+          // })
+
+          writeFile(`/home/req/proj/nkr/cdn/temp/${imageDoc.id}.${extension}`, rowImage, 'base64', (err) => {
+            if (err) {
+              imageObjRepository.delete(imageDoc.id);
+              console.error(err);
+
+              return {
+                id: 'err',
+                description: 'internal server error',
+                author: 'server',
+                date: new Date(),
+              }
+            }
+          })
+    
+          return await imageObjRepository.findById(imageDoc.id);
+        }  
+      })
+         
     },
     createDocumentation: async(parent, args) => {
-      const documentation = new Documentation();
-      documentation.title = args.title;
-      documentation.author = args.author;
-      documentation.issueNumber = args.issueNumber;
-      documentation.publisher = args.publisher;
-      documentation.releaseDate = args.releaseDate;
-      documentation.type = args.type;
-      documentation.url = args.url;
-      documentation.model = args.model;
+      return await jwtVerify(args.token, process.env.tokenSecret, async (err, decoded) => {
+        if (err) {
+          throw('invalid token')
+        }
       
-      const documentationDoc = await documentationRepository.create(documentation);
-      return await documentationRepository.findById(documentationDoc.id);
+        if (decoded.exp < Date.now()) {
+          throw('expired token')
+        }
+      
+        const documentation = new Documentation();
+        documentation.title = args.title;
+        documentation.author = args.author;
+        documentation.issueNumber = args.issueNumber;
+        documentation.publisher = args.publisher;
+        documentation.releaseDate = args.releaseDate;
+        documentation.type = args.type;
+        documentation.url = args.url;
+        documentation.model = args.model;
+        documentation.moderator = decoded.id;
+        documentation.updateDate = Date.now();
+        
+        const documentationDoc = await documentationRepository.create(documentation);
+        return await documentationRepository.findById(documentationDoc.id);
+      })
+      
     },
   },
   Owner: {
@@ -318,7 +477,10 @@ const resolvers = {
       return await manufacturerRepository.findById(parent.manufacturer);
     },
     images: async (parent, args, context, info) => {
-      return await imageObjRepository.whereArrayContains('units', parent.id)
+      return await imageObjRepository.whereArrayContains('units', parent.id).find()
+    },
+    heroImage: async (parent, args, context, info) => {
+      return await imageObjRepository.findById(parent.heroImage)
     }
   },
   Manufacturer: {
@@ -337,12 +499,15 @@ const resolvers = {
       return await documentationRepository.whereEqualTo('model', parent.id).find();
     },
     images: async (parent, args, context, info) => {
-      return await imageObjRepository.whereArrayContains('models', parent.id)
+      return await imageObjRepository.whereArrayContains('models', parent.id).find()
+    },
+    heroImage: async (parent, args, context, info) => {
+      return await imageObjRepository.findById(parent.heroImage)
     }
   },
   ImageTag: {
     images: async (parent, args, context, info) => {
-      return await imageObjRepository.whereArrayContains('tags', parent.id)
+      return await imageObjRepository.whereArrayContains('tags', parent.id).find()
     }
   },
   Image: {

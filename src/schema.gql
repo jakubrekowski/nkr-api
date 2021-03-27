@@ -14,14 +14,27 @@ type Query {
   image(id: ID!): Image
   documentations: [Documentation!]
   documentation(id: ID!): Documentation
+  tokenGet(
+    username: String!
+    password: String!
+  ): Token
+  associations: [Owner!]
+  tokenValid(token: String!): TokenValid
 } 
+
+# Mutatuon
 
 type Mutation {
   createOwner(
+    token: String!
     name: String!
+    isAssociation: Boolean
+    adress: String
+    geopoint: String
   ): Owner!
-  deleteOwner(id: ID!): Owner!
+  deleteOwner(token: String! id: ID!): Owner!
   createUnit(
+    token: String!
     name: String!
     number: String!
     model: ID!
@@ -30,9 +43,12 @@ type Mutation {
     state: String!
     assignments: String!
     repairHistory: String!
-    countryOfOperation: String!): Unit!
-  deleteUnit(id: ID!): Unit!
+    countryOfOperation: String!
+    heroImage: ID!
+  ): Unit!
+  deleteUnit(token: String! id: ID!): Unit!
   createManufacturer(
+    token: String!
     name: String!
     shortName: String!
     country: String!
@@ -40,22 +56,27 @@ type Mutation {
     works: Boolean!
     dateOfLiquidation: String!
   ): Manufacturer!
-  deleteManufacturer(id: ID!): Manufacturer!
+  deleteManufacturer(token: String! id: ID!): Manufacturer!
   createModel(
+    token: String!
     factoryType: String!
     manufacturer: ID!
     manufacturerModel: String!
     intendentUse: String!
     type: String!
+    tractionType: String!
     specTable: String!
     series: String!
+    heroImage: ID!
   ): Model!
-  deleteModel(id: ID!): Model!
+  deleteModel(token: String! id: ID!): Model!
   createImageTag(
+    token: String!
     name: String!
   ): ImageTag!
-  deleteImageTag(id: ID!): ImageTag!
+  deleteImageTag(token: String! id: ID!): ImageTag!
   createImage(
+    token: String!
     units: [ID!]
     models: [ID!]
     description: String!
@@ -64,7 +85,9 @@ type Mutation {
     tags: [ID!]
     image: String!
   ): Image!
+  deleteImage(token: String! id: ID!): Image!
   createDocumentation(
+    token: String!
     title: String!
     author: String!
     issueNumber: String!
@@ -74,7 +97,7 @@ type Mutation {
     url: String!
     model: ID!
   ): Documentation!
-  deleteDocumentation(id: ID!): Documentation!
+  deleteDocumentation(token: String! id: ID!): Documentation!
 }
 
 # Types
@@ -88,6 +111,8 @@ type Manufacturer {
   dateOfLiquidation: String
   units: [Unit!]
   models: [Model!]
+  moderator: String!
+  updateDate: Float!
 }
 
 type Model {
@@ -97,17 +122,26 @@ type Model {
   units: [Unit!]
   manufacturerModel: String!
   intendentUse: String!
+  tractionType: String!
   type: String!
   specTable: String!
   series: String!
   documentation: [Documentation!]
   images: [Image!]
+  heroImage: Image
+  moderator: String!
+  updateDate: Float!
 }
 
 type Owner {
   id: ID!
   name: String!
   units: [Unit!]
+  isAssociation: Boolean
+  adress: String
+  geopoint: String
+  moderator: String!
+  updateDate: Float!
 }
 
 type Unit {
@@ -121,14 +155,18 @@ type Unit {
   assignments: String
   repairHistory: String
   countryOfOperation: String!
-  heroImage: Image!
   images: [Image!]
+  heroImage: Image
+  moderator: String!
+  updateDate: Float!
 }
 
 type ImageTag {
   id: ID!
   name: String!
   images: [Image!]
+  moderator: String!
+  updateDate: Float!
 }
 
 type Image {
@@ -139,6 +177,8 @@ type Image {
   date: String!
   description: String!
   tags: [ImageTag!]
+  moderator: String!
+  updateDate: Float!
 }
 
 type Documentation {
@@ -151,4 +191,14 @@ type Documentation {
   type: String!
   url: String!
   model: Model! 
+  moderator: String!
+  updateDate: Float!
+}
+
+type Token {
+  token: String!
+}
+
+type TokenValid {
+  valid: Boolean!
 }

@@ -414,7 +414,7 @@ const resolvers = {
           //   token: "",
           // })
 
-          writeFile(`/home/req/proj/nkr/cdn/temp/${imageDoc.id}.${extension}`, rowImage, 'base64', (err) => {
+          writeFile(`/home/req/nkr/nkr-cdn/temp/${imageDoc.id}.${extension}`, rowImage, 'base64', (err) => {
             if (err) {
               imageObjRepository.delete(imageDoc.id);
               console.error(err);

@@ -5,6 +5,7 @@
   "main": "src/app.js",
   "scripts": {
     "dev": "ts-node src/app.ts",
+    "dev:new": "ts-node src/new.ts",
     "genJWT": "ts-node src/genJWT.ts"
   },
   "keywords": [

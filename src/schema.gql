@@ -1,52 +1,23 @@
-# Query
 type Query {
-  owners: [Owner!]
-  owner(id: ID!): Owner
-  units: [Unit!]
-  unit(id: ID!): Unit
   manufacturers: [Manufacturer!]
-  manufacturer(id: ID!): Manufacturer
-  models: [Model!]
-  model(id: ID!): Model
-  imageTags: [ImageTag!]
-  imageTag(id: ID!): ImageTag
-  images: [Image!]
-  image(id: ID!): Image
+  manufacturer: Manufacturer!
+  locomotiveModels: [LocomotiveModel!]
+  locomotiveModel: LocomotiveModel!
+  owners: [Owner!]
+  owner: Owner!
+  locomotives: [Locomotive!]
+  locomotive: Locomotive!
+  tags: [Tag!]
+  tag: Tag!
+  pictures: [Picture!]
+  picture: Picture!
   documentations: [Documentation!]
-  documentation(id: ID!): Documentation
-  tokenGet(
-    username: String!
-    password: String!
-  ): Token
+  documentation: Documentation!
   associations: [Owner!]
-  tokenValid(token: String!): TokenValid
-} 
-
-# Mutatuon
+  association(id: ID!): Owner!
+}
 
 type Mutation {
-  createOwner(
-    token: String!
-    name: String!
-    isAssociation: Boolean
-    adress: String
-    geopoint: String
-  ): Owner!
-  deleteOwner(token: String! id: ID!): Owner!
-  createUnit(
-    token: String!
-    name: String!
-    number: String!
-    model: ID!
-    owner: ID!
-    manufacturer: ID!
-    state: String!
-    assignments: String!
-    repairHistory: String!
-    countryOfOperation: String!
-    heroImage: ID!
-  ): Unit!
-  deleteUnit(token: String! id: ID!): Unit!
   createManufacturer(
     token: String!
     name: String!
@@ -54,38 +25,110 @@ type Mutation {
     country: String!
     creationDate: String!
     works: Boolean!
-    dateOfLiquidation: String!
+    dateOfLiquidation: String
+    heroImage: ID
   ): Manufacturer!
-  deleteManufacturer(token: String! id: ID!): Manufacturer!
-  createModel(
+  updateManufacturer(
     token: String!
-    factoryType: String!
-    manufacturer: ID!
-    manufacturerModel: String!
+    id: ID!
+    name: String!
+    shortName: String!
+    country: String!
+    creationDate: String!
+    works: Boolean!
+    dateOfLiquidation: String
+    heroImage: ID
+  ): Manufacturer!
+  deleteManufacturer(token: String!, id: ID!): Manufacturer!
+  createLocomotiveModel(
+    token: String!
+    factoryType: [String!]
+    manufacturer: [ID!]
     intendentUse: String!
-    type: String!
     tractionType: String!
     specTable: String!
-    series: String!
-    heroImage: ID!
-  ): Model!
-  deleteModel(token: String! id: ID!): Model!
-  createImageTag(
+    series: [String!]
+    heroImage: ID
+  ): LocomotiveModel!
+  updateLocomotiveModel(
+    token: String!
+    id: ID!
+    factoryType: [String!]
+    manufacturer: [ID!]
+    intendentUse: String!
+    tractionType: String!
+    specTable: String!
+    series: [String!]
+    heroImage: ID
+  ): LocomotiveModel!
+  deleteLocomotiveModel(token: String!, id: ID!): LocomotiveModel!
+  createOwner(
     token: String!
     name: String!
-  ): ImageTag!
-  deleteImageTag(token: String! id: ID!): ImageTag!
-  createImage(
+    isAssociation: Boolean!
+    adress: String!
+    geopoint: String!
+    website: String
+    heroImage: ID 
+  ): Owner!
+  updateOwner(
+    token: String!
+    id: ID!
+    name: String!
+    isAssociation: Boolean!
+    adress: String!
+    geopoint: String!
+    website: String
+    heroImage: ID
+  ): Owner!
+  deleteOwner(token: String!, id: ID!): Owner!
+  createLocomotive(
+    token: String!
+    number: String!
+    model: ID!
+    owner: ID!
+    manufacturer: ID!
+    state: String!
+    assignments: String
+    repairHistory: String
+    countryOfOperation: String!
+    heroImage: ID
+  ): Locomotive!
+  updateLocomotive(
+    token: String!
+    id: ID!
+    number: String!
+    model: ID!
+    owner: ID!
+    manufacturer: ID!
+    state: String!
+    assignments: String
+    repairHistory: String
+    countryOfOperation: String!
+    heroImage: ID
+  ): Locomotive!
+  deleteLocomotive(token: String!, id: ID!): Locomotive!
+  createTag(token: String!, name: String!): Tag!
+  updateTag(token: String!, id: ID!, name: String!): Tag!
+  deleteTag(token: String!, id: ID!): Tag!
+  createPicture(
     token: String!
     units: [ID!]
     models: [ID!]
     description: String!
-    author: String!
     date: String!
     tags: [ID!]
-    image: String!
-  ): Image!
-  deleteImage(token: String! id: ID!): Image!
+  ): Picture!
+  updatePicture(
+    token: String!
+    id: ID!
+    units: [ID!]
+    models: [ID!]
+    description: String!
+    date: String!
+    tags: [ID!]
+  ): Picture!
+  deletePicture(token: String!, id: ID!): Picture!
   createDocumentation(
     token: String!
     title: String!
@@ -95,12 +138,23 @@ type Mutation {
     releaseDate: String!
     type: String!
     url: String!
-    model: ID!
+    model: [ID!]
   ): Documentation!
-  deleteDocumentation(token: String! id: ID!): Documentation!
+  updateDocumentation(
+    token: String!
+    id: ID!
+    title: String!
+    author: String!
+    issueNumber: String!
+    publisher: String!
+    releaseDate: String!
+    type: String!
+    url: String!
+    model: [ID!]
+  ): Documentation!
+  deleteDocumentation(token: String!, id: ID!): Documentation!
 }
 
-# Types
 type Manufacturer {
   id: ID!
   name: String!
@@ -109,76 +163,55 @@ type Manufacturer {
   creationDate: String!
   works: Boolean!
   dateOfLiquidation: String
-  units: [Unit!]
-  models: [Model!]
-  moderator: String!
-  updateDate: Float!
+  heroImage: ID
 }
 
-type Model {
+type LocomotiveModel {
   id: ID!
-  factoryType: String!
-  manufacturer: Manufacturer!
-  units: [Unit!]
-  manufacturerModel: String!
+  factoryType: [String!]
+  manufacturer: [ID!]
   intendentUse: String!
   tractionType: String!
-  type: String!
   specTable: String!
-  series: String!
-  documentation: [Documentation!]
-  images: [Image!]
-  heroImage: Image
-  moderator: String!
-  updateDate: Float!
+  series: [String!]
+  heroImage: ID
 }
 
 type Owner {
   id: ID!
   name: String!
-  units: [Unit!]
-  isAssociation: Boolean
-  adress: String
-  geopoint: String
-  moderator: String!
-  updateDate: Float!
+  isAssociation: Boolean!
+  adress: String!
+  geopoint: String!
+  website: String
+  heroImage: ID
 }
 
-type Unit {
+type Locomotive {
   id: ID!
-  name: String!
   number: String!
-  model: Model!
-  owner: Owner!
-  manufacturer: Manufacturer!
+  model: ID!
+  owner: ID!
+  manufacturer: ID!
   state: String!
   assignments: String
   repairHistory: String
   countryOfOperation: String!
-  images: [Image!]
-  heroImage: Image
-  moderator: String!
-  updateDate: Float!
+  heroImage: ID
 }
 
-type ImageTag {
+type Tag {
   id: ID!
   name: String!
-  images: [Image!]
-  moderator: String!
-  updateDate: Float!
 }
 
-type Image {
-  id: ID!,
-  units: [Unit!]
-  models: [Model!]
-  author: String!
-  date: String!
+type Picture {
+  id: ID!
+  units: [ID!]
+  models: [ID!]
   description: String!
-  tags: [ImageTag!]
-  moderator: String!
-  updateDate: Float!
+  date: String!
+  tags: [ID!]
 }
 
 type Documentation {
@@ -190,15 +223,6 @@ type Documentation {
   releaseDate: String!
   type: String!
   url: String!
-  model: Model! 
-  moderator: String!
-  updateDate: Float!
+  model: [ID!]
 }
 
-type Token {
-  token: String!
-}
-
-type TokenValid {
-  valid: Boolean!
-}

@@ -1,11 +1,9 @@
 import { ApolloServer, gql } from 'apollo-server';
-import { readFileSync, writeFile } from 'fs';
 import { Firestore } from '@google-cloud/firestore';
 import { initialize, Collection, getRepository } from 'fireorm';
-import { sign as jwtSign, verify as jwtVerify } from 'jsonwebtoken';
 import { config as dotenvConfig } from 'dotenv';
-import axios from 'axios';
-import { decode } from 'querystring';
+import { verify as verifyJwt } from 'jsonwebtoken';
+import { readFileSync } from 'node:fs';
 
 dotenvConfig();
 
@@ -14,543 +12,229 @@ const firebaseConfig = {
   keyFilename: './serviceAccount.json',
 }
 
-const firestore = new Firestore(firebaseConfig);
-initialize(firestore);
+const firesotre = new Firestore(firebaseConfig);
+initialize(firesotre);
 
 @Collection()
 class Manufacturer {
   id: string;
-  name: string;
-  shortName: string;
-  country: string;
-  creationDate: string;
+  name: string; 
+  shortName: string; 
+  country: string; 
+  creationDate: string; 
   works: Boolean;
-  dateOfLiquidation: string;
+  dateOfLiquidation: string; 
+  heroImage: string; 
   moderator: string;
   updateDate: number;
 }
 
-const manufacturerRepository = getRepository(Manufacturer);
+const manufacturerRepo = getRepository(Manufacturer);
 
 @Collection()
-class Model {
+class LocomotiveModel {
   id: string;
-  factoryType: string;
-  manufacturer: string;
-  manufacturerModel: string;
+  factoryType: Array<string>; 
+  manufacturer: Array<string>;
   intendentUse: string;
-  type: string;
   tractionType: string;
-  specTable: string;
-  series: string;
+  specTable: string; 
+  series: Array<string>; 
   heroImage: string;
   moderator: string;
   updateDate: number;
 }
 
-const modelRepository = getRepository(Model);
+const locomotiveModelRepo = getRepository(LocomotiveModel);
 
 @Collection()
 class Owner {
   id: string;
-  name: string;
+  name: string; 
   isAssociation: boolean;
   adress: string;
   geopoint: string;
+  website: string;
+  heroImage: string; 
   moderator: string;
   updateDate: number;
 }
 
-const ownerRepository = getRepository(Owner);
+const ownerRepo = getRepository(Owner);
 
 @Collection()
-class Unit {
+class Locomotive {
   id: string;
-  name: string;
-  number: string;
-  model: string;
-  owner: string;
-  manufacturer: string;
-  state: string;
+  number: string; 
+  model: string; 
+  owner: string; 
+  manufacturer: string; 
+  state: string; 
   assignments: string;
   repairHistory: string;
   countryOfOperation: string;
   heroImage: string;
+  tegs: Array<string>;
   moderator: string;
   updateDate: number;
 }
 
-const unitRepository = getRepository(Unit);
+const locomotiveRepo = getRepository(Locomotive);
 
-@Collection() 
-class ImageTag {
+@Collection()
+class Tag {
   id: string;
   name: string;
   moderator: string;
   updateDate: number;
 }
 
-const imageTagRepository = getRepository(ImageTag);
+const tagRepo = getRepository(Tag);
 
 @Collection()
-class ImageObj {
+class Picture {
   id: string;
-  units: [string];
-  models: [string];
+  units: [string]; 
+  models: [string]; 
   description: string;
-  author: string;
-  date: string;
-  tags: [string];
+  date: string; 
+  tags: [string]; 
   moderator: string;
   updateDate: number;
 }
 
-const imageObjRepository = getRepository(ImageObj);
+const pictureRepo = getRepository(Picture);
 
 @Collection()
 class Documentation {
   id: string;
-  title: string;
-  author: string;
-  issueNumber: string;
-  publisher: string;
-  releaseDate: string;
-  type: string;
-  url: string;
-  model: string;
+  title: string;  
+  author: string; 
+  issueNumber: string; 
+  publisher: string; 
+  releaseDate: string; 
+  type: string; 
+  url: string; 
+  model: Array<string>; 
   moderator: string;
   updateDate: number;
 }
 
-const documentationRepository = getRepository(Documentation);
+const documentationRepo = getRepository(Documentation);
 
 const resolvers = {
   Query: {
-    owners: async () => {
-      const snapshot = await firestore.collection('Owners').get();
-      const response = [];
-      await snapshot.forEach(doc => {
-        const data = doc.data()
-        data.id = doc.id
-        response.push(data);
-      })
-
-      return response;
-    },
-    units: async () => {
-      const snapshot = await firestore.collection('Units').get();
-      const response = [];
-      await snapshot.forEach(doc => {
-        const data = doc.data()
-        data.id = doc.id
-        response.push(data);
-      })
-
-      return response;
-    },
     manufacturers: async () => {
-      const snapshot = await firestore.collection('Manufacturers').get();
-      const response = [];
-      await snapshot.forEach(doc => {
-        const data = doc.data()
-        data.id = doc.id
-        response.push(data);
-      })
-
-      return response;
+      const manufacturers = await manufacturerRepo.find();
+      return manufacturers;
     },
-    models: async () => {
-      const snapshot = await firestore.collection('Models').get();
-      const response = [];
-      await snapshot.forEach(doc => {
-        const data = doc.data()
-        data.id = doc.id
-        response.push(data);
-      })
-
-      return response;
+    locomotiveModels: async () => {
+      const locomotiveModels = await locomotiveModelRepo.find();
+      return locomotiveModels;
     },
-    imageTags: async () => {
-      const snapshot = await firestore.collection('ImageTags').get();
-      const response = [];
-      await snapshot.forEach(doc => {
-        const data = doc.data()
-        data.id = doc.id
-        response.push(data);
-      })
-
-      return response;
+    owners: async () => { 
+      const owners = await ownerRepo.find();
+      return owners;
     },
-    images: async () => {
-      const snapshot = await firestore.collection('ImageObjs').get();
-      const response = [];
-      await snapshot.forEach(doc => {
-        const data = doc.data()
-        data.id = doc.id
-        response.push(data);
-      })
-
-      return response;
+    locomotives: async () => {
+      const locomotives = await locomotiveRepo.find();
+      return locomotives;
+    },
+    tags: async () => {
+      const tags = await tagRepo.find();
+      return tags;
+    },
+    pictures: async () => {
+      const pictures = await pictureRepo.find();
+      return pictures;
     },
     documentations: async () => {
-      const snapshot = await firestore.collection('Documentations').get();
-      const response = [];
-      await snapshot.forEach(doc => {
-        const data = doc.data()
-        data.id = doc.id
-        response.push(data);
-      })
-
-      return response;
+      const documentation = await documentationRepo.find();
+      return documentation;
     },
     associations: async () => {
-      return await ownerRepository.whereEqualTo('isAssociation', true).find();
+      const owners = await ownerRepo.whereEqualTo('isAssociation', true );
+      return owners;
     },
-    owner: async (parent, args, context, info) => {
-      return await ownerRepository.findById(args.id)
+    manufacturer: async (parent, args) => {
+      const manufacturer = await manufacturerRepo.findById(args.id);
+      return manufacturer;
     },
-    unit: async (parent, args, context, info) => {
-      return await unitRepository.findById(args.id)
+    locomotiveModel: async (parent, args) => {
+      const locomotiveModel = await locomotiveModelRepo.findById(args.id);
+      return locomotiveModel;
     },
-    manufacturer: async (parent, args, context, info) => {
-      return await manufacturerRepository.findById(args.id)
+    owner: async (parent, args) => {
+      const owner = await ownerRepo.findById(args.id);
+      return owner;
     },
-    model: async (parent, args, context, info) => {
-      return await modelRepository.findById(args.id)
+    locomotive: async (parent, args) => {
+      const locomotive = await locomotiveRepo.findById(args.id);
+      return locomotive;
     },
-    imageTag: async (parent, args, context, info) => {
-      return await imageTagRepository.findById(args.id)
+    tag: async (parent, args) => {
+      const tag = await tagRepo.findById(args.id);
+      return tag;
     },
-    image: async (parent, args, context, info) => {
-      return await imageObjRepository.findById(args.id)
+    picture: async (parent, args) => {
+      const picture = await pictureRepo.findById(args.id);
+      return picture;
     },
-    documentation: async (parent, args, context, info) => {
-      return await documentationRepository.findById(args.id)
+    documentation: async (parent, args) => {
+      const documentation = await documentationRepo.findById(args.id);
+      return documentation;
     },
-    tokenValid: async (parent, args, context, info) => {
-      return await jwtVerify(args.token, process.env.tokenSecret, async (err, decoded) => {
-        if (err) {
-          throw('invalid token')
-        }
-
-        if (decoded.exp < Date.now()) {
-          throw('expired token')
-        }
-
-        return {
-          valid: true
-        }
-      })
-    },
+    // association: async (parent, args) => {
+    //   const owner = await ownerRepo.whereEqualTo('isAssociation', true ).findById(args.id);
+    //   return owner;
+    // },
   },
   Mutation: {
-    createOwner: async(parent, args) => {
-      return await jwtVerify(args.token, process.env.tokenSecret, async (err, decoded) => {
-        if (err) {
-          throw('invalid token')
-        }
+    createManufacturer: async (parent, args) => {
+      const tokenPayload = verifyJwt(args.token, process.env.tokenSecret);
 
-        if (decoded.exp < Date.now()) {
-          throw('expired token')
-        }
+      const manufacturer = new Manufacturer();
+      manufacturer.id = args.id;
+      manufacturer.name = args.name;
+      manufacturer.shortName = args.shortName;
+      manufacturer.country = args.country;
+      manufacturer.creationDate = args.creationDate;
+      manufacturer.works = args.works;
+      manufacturer.dateOfLiquidation = args.dateOfLiquidation;
+      manufacturer.heroImage = args.heroImage;
+      manufacturer.moderator = tokenPayload.iss;
+      manufacturer.updateDate = Date.now();
+      await manufacturerRepo.create(manufacturer);
+      return manufacturer;
+    },
+    updateManufacturer: async (parent, args) => {
+      const tokenPayload = verifyJwt(args.token, process.env.tokenSecret);
 
-        const owner = new Owner();
-        owner.name = args.name;
-        owner.isAssociation = args.isAssociation;
+      const manufacturer = await manufacturerRepo.findById(args.id);
+      manufacturer.name = args.name;
+      manufacturer.shortName = args.shortName;
+      manufacturer.country = args.country;
+      manufacturer.creationDate = args.creationDate;
+      manufacturer.works = args.works;
+      manufacturer.dateOfLiquidation = args.dateOfLiquidation;
+      manufacturer.heroImage = args.heroImage;
+      manufacturer.moderator = tokenPayload.iss;
+      manufacturer.updateDate = Date.now();
+      await manufacturerRepo.update(manufacturer);
+      return manufacturer;
+    },
+    deleteManufacturer: async (parent, args) => {
+      const manufacturer = await manufacturerRepo.findById(args.id);
+      await manufacturerRepo.delete(manufacturer.id);
+      return manufacturer;
+    },
+  }}
 
-        owner.adress = args.adress;
-        owner.geopoint = args.geopoint;
-        owner.moderator = decoded.id;
-        owner.updateDate = Date.now();
-  
-        const ownerDoc = await ownerRepository.create(owner);
-        return await ownerRepository.findById(ownerDoc.id);
-      })
-    },
-    createUnit: async(parent, args) => {
-      return await jwtVerify(args.token, process.env.tokenSecret, async (err, decoded) => {
-        if (err) {
-          throw('invalid token')
-        }
-      
-        if (decoded.exp < Date.now()) {
-          throw('expired token')
-        }
-      
-        const unit = new Unit();
-        unit.name = args.name;
-        unit.number = args.number;
-        unit.model = args.model;
-        unit.owner = args.owner;
-        unit.manufacturer = args.manufacturer;
-        unit.state = args.state;
-        unit.assignments = args.assignments;
-        unit.repairHistory = args.repairHistory;
-        unit.countryOfOperation = args.countryOfOperation;
-        unit.heroImage = args.heroImage;
-        unit.moderator = decoded.id;
-        unit.updateDate = Date.now();
-  
-        const unitDoc = await unitRepository.create(unit);
-        return await unitRepository.findById(unitDoc.id);
-      })     
-    },
-    createManufacturer: async(parent, args) => {
-      return await jwtVerify(args.token, process.env.tokenSecret, async (err, decoded) => {
-        if (err) {
-          throw('invalid token')
-        }
-      
-        if (decoded.exp < Date.now()) {
-          throw('expired token')
-        }
-      
-        const manufacturer = new Manufacturer();
-        manufacturer.name = args.name;
-        manufacturer.shortName = args.shortName;
-        manufacturer.country = args.country;
-        manufacturer.creationDate = args.creationDate;
-        manufacturer.works = args.works;
-        manufacturer.dateOfLiquidation = args.dateOfLiquidation;
-        manufacturer.moderator = decoded.id;
-        manufacturer.updateDate = Date.now();
-  
-        const manufacturerDoc = await manufacturerRepository.create(manufacturer);
-        return await manufacturerRepository.findById(manufacturerDoc.id);
-      })     
-    },
-    createModel: async(parent, args) => {
-      return await jwtVerify(args.token, process.env.tokenSecret, async (err, decoded) => {
-        if (err) {
-          throw('invalid token')
-        }
-      
-        if (decoded.exp < Date.now()) {
-          throw('expired token')
-        }
-      
-        const model = new Model();
-        model.factoryType = args.factoryType;
-        model.manufacturer = args.manufacturer;
-        model.manufacturerModel = args.manufacturerModel;
-        model.intendentUse = args.intendentUse;
-        model.type = args.type;
-        model.tractionType = args.tractionType;
-        model.specTable = args.specTable;
-        model.series = args.series;
-        model.heroImage = args.heroImage;
-        model.moderator = decoded.id;
-        model.updateDate = Date.now();
-
-        const modelDoc = await modelRepository.create(model);
-        return await modelRepository.findById(modelDoc.id);
-      })
-      
-    },
-    createImageTag: async(parent, args) => {
-      return await jwtVerify(args.token, process.env.tokenSecret, async (err, decoded) => {
-        if (err) {
-          throw('invalid token')
-        }
-      
-        if (decoded.exp < Date.now()) {
-          throw('expired token')
-        }
-      
-        const imageTag = new ImageTag();
-        imageTag.name = args.name;
-        imageTag.moderator = decoded.id;
-        imageTag.updateDate = Date.now();
-
-        const imageTagDoc = await imageTagRepository.create(imageTag);
-        return await imageTagRepository.findById(imageTagDoc.id);
-      })
-      
-    },
-    createImage: async(parent, args) => {
-      return await jwtVerify(args.token, process.env.tokenSecret, async (err, decoded) => {
-        if (err) {
-          throw('invalid token')
-        }
-      
-        if (decoded.exp < Date.now()) {
-          throw('expired token')
-        }
-      
-        const image = new ImageObj();
-        image.units = args.units;
-        image.models = args.models;
-        image.description = args.description;
-        image.author = args.author;
-        image.date = args.date;
-        image.tags = args.tags;
-        image.moderator = decoded.id;
-        image.updateDate = Date.now();
-
-        if (args.image === undefined) {
-          return {
-            id: 'err',
-            description: 'image not attached',
-            author: 'server',
-            date: new Date(),
-          }
-        } else {
-          const imageDoc = await imageObjRepository.create(image);
-
-          const urlImage = args.image;
-
-          let extension = '';
-
-          if (urlImage.search(':image/jpeg') !== -1) {
-            extension = 'jpeg';
-          } else if (urlImage.search(':image/png') !== -1) {
-            extension = 'png';
-          }
-
-          const rowImage = urlImage.replace('data:image/png;base64,', '').replace('data:image/jpeg;base64,', '');
-          
-          // axios.post(`http://localhost:8000/img/${imageDoc.id}`, {
-          //   base64: args.image,
-          //   token: "",
-          // })
-
-          writeFile(`/home/req/nkr/nkr-cdn/temp/${imageDoc.id}.${extension}`, rowImage, 'base64', (err) => {
-            if (err) {
-              imageObjRepository.delete(imageDoc.id);
-              console.error(err);
-
-              return {
-                id: 'err',
-                description: 'internal server error',
-                author: 'server',
-                date: new Date(),
-              }
-            }
-          })
-    
-          return await imageObjRepository.findById(imageDoc.id);
-        }  
-      })
-         
-    },
-    createDocumentation: async(parent, args) => {
-      return await jwtVerify(args.token, process.env.tokenSecret, async (err, decoded) => {
-        if (err) {
-          throw('invalid token')
-        }
-      
-        if (decoded.exp < Date.now()) {
-          throw('expired token')
-        }
-      
-        const documentation = new Documentation();
-        documentation.title = args.title;
-        documentation.author = args.author;
-        documentation.issueNumber = args.issueNumber;
-        documentation.publisher = args.publisher;
-        documentation.releaseDate = args.releaseDate;
-        documentation.type = args.type;
-        documentation.url = args.url;
-        documentation.model = args.model;
-        documentation.moderator = decoded.id;
-        documentation.updateDate = Date.now();
-        
-        const documentationDoc = await documentationRepository.create(documentation);
-        return await documentationRepository.findById(documentationDoc.id);
-      })
-      
-    },
-  },
-  Owner: {
-    units: async (parent, args, context, info) => {
-      return await unitRepository.whereEqualTo('owner', parent.id).find();
-    },
-  },
-  Unit: {
-    model: async (parent, args, context, info) => {
-      return await modelRepository.findById(parent.model);
-    },
-    owner: async (parent, args, context, info) => {
-      return await ownerRepository.findById(parent.owner);
-    },
-    manufacturer: async (parent, args, context, info) => {
-      return await manufacturerRepository.findById(parent.manufacturer);
-    },
-    images: async (parent, args, context, info) => {
-      return await imageObjRepository.whereArrayContains('units', parent.id).find()
-    },
-    heroImage: async (parent, args, context, info) => {
-      return await imageObjRepository.findById(parent.heroImage)
-    }
-  },
-  Manufacturer: {
-    units: async (parent, args, context, info) => {
-      return await unitRepository.whereEqualTo('manufacturer', parent.id).find();
-    }
-  },
-  Model: {
-    manufacturer: async (parent, args, context, info) => {
-      return await manufacturerRepository.findById(parent.manufacturer);
-    },
-    units: async (parent, args, context, info) => {
-      return await unitRepository.whereEqualTo('model', parent.id).find();
-    },
-    documentation: async (parent, args, context, info) => {
-      return await documentationRepository.whereEqualTo('model', parent.id).find();
-    },
-    images: async (parent, args, context, info) => {
-      return await imageObjRepository.whereArrayContains('models', parent.id).find()
-    },
-    heroImage: async (parent, args, context, info) => {
-      return await imageObjRepository.findById(parent.heroImage)
-    }
-  },
-  ImageTag: {
-    images: async (parent, args, context, info) => {
-      return await imageObjRepository.whereArrayContains('tags', parent.id).find()
-    }
-  },
-  Image: {
-    units: async (parent, args, context, info) => {
-      const unitsIds = parent.units;
-      let units = []
-      for (const id of unitsIds) {
-        units.push(await unitRepository.findById(id))
-      }
-      return units
-    },
-    models: async (parent, args, context, info) => {
-      const modelsIds = parent.models;
-      let models = []
-      for (const id of modelsIds) {
-        models.push(await modelRepository.findById(id))
-      }
-      return models
-    },
-    tags: async (parent, args, context, info) => {
-      const tagsIds = parent.tags;
-      let tags = []
-      for (const id of tagsIds) {
-        const tempDoc = await imageTagRepository.findById(id)
-        if (tempDoc !== null) {
-          tags.push(tempDoc)
-        }
-      }
-      return tags
-    }
-  },
-  Documentation: {
-    model: async (parent, args, context, info) => {
-      return await modelRepository.findById(parent.id);
-    },
-  },
-}
-
-const server = new ApolloServer({ 
+const server = new ApolloServer({
   typeDefs: gql`${readFileSync(__dirname.concat('/schema.gql'), 'utf8')}`,
-  resolvers 
+  resolvers,
 });
 
 server.listen().then(({ url }) => {
-  console.log(`Server ready at ${url}`);
+  console.log(`🚀  Server ready at ${url}`);
 });

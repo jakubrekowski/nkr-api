@@ -164,6 +164,9 @@ type Manufacturer {
   works: Boolean!
   dateOfLiquidation: String
   heroImage: ID
+  moderator: string;
+  updateDate: number;
+  verified: string;
 }
 
 type LocomotiveModel {
@@ -175,6 +178,9 @@ type LocomotiveModel {
   specTable: String!
   series: [String!]
   heroImage: ID
+  moderator: string;
+  updateDate: number;
+  verified: string;
 }
 
 type Owner {
@@ -185,6 +191,9 @@ type Owner {
   geopoint: String!
   website: String
   heroImage: ID
+  moderator: string;
+  updateDate: number;
+  verified: string;
 }
 
 type Locomotive {
@@ -198,11 +207,17 @@ type Locomotive {
   repairHistory: String
   countryOfOperation: String!
   heroImage: ID
+  moderator: string;
+  updateDate: number;
+  verified: string;
 }
 
 type Tag {
   id: ID!
   name: String!
+  moderator: string;
+  updateDate: number;
+  verified: string;
 }
 
 type Picture {
@@ -212,6 +227,9 @@ type Picture {
   description: String!
   date: String!
   tags: [ID!]
+  moderator: string;
+  updateDate: number;
+  verified: string;
 }
 
 type Documentation {
@@ -224,5 +242,8 @@ type Documentation {
   type: String!
   url: String!
   model: [ID!]
+  moderator: string;
+  updateDate: number;
+  verified: string;
 }
 

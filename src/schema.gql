@@ -84,7 +84,7 @@ type Mutation {
   deleteOwner(token: String!, id: ID!): Owner!
   createLocomotive(
     token: String!
-    number: String!
+    Float: String!
     model: ID!
     owner: ID!
     manufacturer: ID!
@@ -97,7 +97,7 @@ type Mutation {
   updateLocomotive(
     token: String!
     id: ID!
-    number: String!
+    Float: String!
     model: ID!
     owner: ID!
     manufacturer: ID!
@@ -133,7 +133,7 @@ type Mutation {
     token: String!
     title: String!
     author: String!
-    issueNumber: String!
+    issueFloat: String!
     publisher: String!
     releaseDate: String!
     type: String!
@@ -145,7 +145,7 @@ type Mutation {
     id: ID!
     title: String!
     author: String!
-    issueNumber: String!
+    issueFloat: String!
     publisher: String!
     releaseDate: String!
     type: String!
@@ -164,9 +164,9 @@ type Manufacturer {
   works: Boolean!
   dateOfLiquidation: String
   heroImage: ID
-  moderator: string;
-  updateDate: number;
-  verified: string;
+  moderator: String
+  updateDate: Float
+  verified: String
 }
 
 type LocomotiveModel {
@@ -178,9 +178,9 @@ type LocomotiveModel {
   specTable: String!
   series: [String!]
   heroImage: ID
-  moderator: string;
-  updateDate: number;
-  verified: string;
+  moderator: String
+  updateDate: Float
+  verified: String
 }
 
 type Owner {
@@ -191,14 +191,14 @@ type Owner {
   geopoint: String!
   website: String
   heroImage: ID
-  moderator: string;
-  updateDate: number;
-  verified: string;
+  moderator: String
+  updateDate: Float
+  verified: String
 }
 
 type Locomotive {
   id: ID!
-  number: String!
+  Float: String!
   model: ID!
   owner: ID!
   manufacturer: ID!
@@ -207,17 +207,17 @@ type Locomotive {
   repairHistory: String
   countryOfOperation: String!
   heroImage: ID
-  moderator: string;
-  updateDate: number;
-  verified: string;
+  moderator: String
+  updateDate: Float
+  verified: String
 }
 
 type Tag {
   id: ID!
   name: String!
-  moderator: string;
-  updateDate: number;
-  verified: string;
+  moderator: String
+  updateDate: Float
+  verified: String
 }
 
 type Picture {
@@ -227,23 +227,23 @@ type Picture {
   description: String!
   date: String!
   tags: [ID!]
-  moderator: string;
-  updateDate: number;
-  verified: string;
+  moderator: String
+  updateDate: Float
+  verified: String
 }
 
 type Documentation {
   id: ID!
   title: String!
   author: String!
-  issueNumber: String!
+  issueFloat: String!
   publisher: String!
   releaseDate: String!
   type: String!
   url: String!
   model: [ID!]
-  moderator: string;
-  updateDate: number;
-  verified: string;
+  moderator: String
+  updateDate: Float
+  verified: String
 }
 
